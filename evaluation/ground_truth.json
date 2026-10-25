@@ -1,0 +1,467 @@
+{
+  "_doc": "Known defects per scenario. A reported violation matches an entry when its rule_id is in 'rules' and, if given, its file is in 'files' and its line is within 'line' +/- 2. 'optional' entries are genuine issues that were not deliberately injected: matching them counts as correct for precision but they are not in the recall denominator.",
+  "scenario_a": [
+    {
+      "id": "A1",
+      "desc": "Missing README",
+      "rules": [
+        "HYG-001"
+      ]
+    },
+    {
+      "id": "A2",
+      "desc": "No .gitignore",
+      "rules": [
+        "HYG-002"
+      ]
+    },
+    {
+      "id": "A3",
+      "desc": "Tracked generated/temporary files (.pyc, .DS_Store, server.log)",
+      "rules": [
+        "HYG-003"
+      ],
+      "files": [
+        null,
+        "__pycache__/config.cpython-311.pyc",
+        ".DS_Store",
+        "server.log"
+      ]
+    },
+    {
+      "id": "A4",
+      "desc": "Hardcoded Stripe key in config.py",
+      "rules": [
+        "SEC-001"
+      ],
+      "files": [
+        "config.py"
+      ]
+    },
+    {
+      "id": "A5",
+      "desc": "Committed .env with credentials",
+      "rules": [
+        "SEC-003",
+        "SEC-001"
+      ],
+      "files": [
+        ".env"
+      ]
+    },
+    {
+      "id": "A6",
+      "desc": "Unpinned dependencies, no lockfile",
+      "rules": [
+        "DEP-002"
+      ],
+      "files": [
+        null,
+        "requirements.txt"
+      ]
+    },
+    {
+      "id": "A7",
+      "desc": "No tests",
+      "rules": [
+        "TST-001"
+      ]
+    },
+    {
+      "id": "A8",
+      "desc": "No CI",
+      "rules": [
+        "CI-001"
+      ]
+    },
+    {
+      "id": "A9",
+      "desc": "Machine-specific absolute paths",
+      "rules": [
+        "CFG-001"
+      ],
+      "files": [
+        "app.py",
+        "utils.py"
+      ]
+    },
+    {
+      "id": "A10",
+      "desc": "Flask debug=True on 0.0.0.0",
+      "rules": [
+        "SEC-008"
+      ],
+      "files": [
+        "app.py"
+      ]
+    },
+    {
+      "id": "A11",
+      "desc": "TLS verification disabled",
+      "rules": [
+        "SEC-009",
+        "SEC-008"
+      ],
+      "files": [
+        "app.py"
+      ]
+    },
+    {
+      "id": "A12",
+      "desc": "Bare except swallowing errors",
+      "rules": [
+        "CQ-003"
+      ],
+      "files": [
+        "app.py"
+      ]
+    },
+    {
+      "id": "A13",
+      "desc": "Production DB host hardcoded",
+      "rules": [
+        "CFG-003",
+        "CFG-001"
+      ],
+      "files": [
+        "config.py"
+      ]
+    },
+    {
+      "id": "A14",
+      "desc": "No linting/formatting",
+      "rules": [
+        "CQ-001"
+      ]
+    }
+  ],
+  "scenario_b": [
+    {
+      "id": "B1",
+      "desc": "CI branch filter 'master' but default branch is 'main'",
+      "rules": [
+        "CI-002"
+      ],
+      "files": [
+        ".github/workflows/ci.yml"
+      ]
+    },
+    {
+      "id": "B2",
+      "desc": "Test step masked with '|| true'",
+      "rules": [
+        "CI-003"
+      ],
+      "files": [
+        ".github/workflows/ci.yml"
+      ],
+      "line": 21
+    },
+    {
+      "id": "B3",
+      "desc": "Lint step continue-on-error",
+      "rules": [
+        "CI-003",
+        "CI-004"
+      ],
+      "files": [
+        ".github/workflows/ci.yml"
+      ],
+      "line": 19
+    },
+    {
+      "id": "B4",
+      "desc": "permissions: write-all",
+      "rules": [
+        "SEC-004"
+      ],
+      "files": [
+        ".github/workflows/ci.yml"
+      ]
+    },
+    {
+      "id": "B5",
+      "desc": "pull_request_target checks out and runs PR head with secret",
+      "rules": [
+        "SEC-005"
+      ],
+      "files": [
+        ".github/workflows/pr-check.yml"
+      ]
+    },
+    {
+      "id": "B6",
+      "desc": "Issue title script injection",
+      "rules": [
+        "SEC-006"
+      ],
+      "files": [
+        ".github/workflows/triage.yml"
+      ]
+    },
+    {
+      "id": "B7",
+      "desc": "Deploy on any branch without test gate",
+      "rules": [
+        "BLD-002"
+      ],
+      "files": [
+        ".github/workflows/deploy.yml"
+      ]
+    },
+    {
+      "id": "B8",
+      "desc": "Third-party action on @master",
+      "rules": [
+        "CI-005"
+      ],
+      "files": [
+        ".github/workflows/deploy.yml"
+      ]
+    },
+    {
+      "id": "B9",
+      "desc": "GitHub token in git history",
+      "rules": [
+        "SEC-002"
+      ]
+    },
+    {
+      "id": "B10",
+      "desc": "requirements.txt pins conflict with pyproject ranges",
+      "rules": [
+        "DEP-003"
+      ],
+      "files": [
+        "requirements.txt",
+        "pyproject.toml"
+      ]
+    },
+    {
+      "id": "B11",
+      "desc": "Committed personal .vscode settings with local path",
+      "rules": [
+        "CFG-002",
+        "CFG-001"
+      ],
+      "files": [
+        ".vscode/settings.json"
+      ]
+    },
+    {
+      "id": "B12",
+      "desc": "Version mismatch __init__ 0.2.0 vs pyproject 0.3.0",
+      "rules": [
+        "BLD-004"
+      ],
+      "files": [
+        "inventory/__init__.py",
+        "pyproject.toml"
+      ]
+    },
+    {
+      "id": "B13",
+      "desc": "pyproject without [build-system] (optional)",
+      "rules": [
+        "BLD-900",
+        "DEP-900",
+        "BLD-001"
+      ],
+      "files": [
+        "pyproject.toml"
+      ],
+      "optional": true
+    },
+    {
+      "id": "B14",
+      "desc": "INVENTORY_API_URL env var undocumented (optional, accidental genuine issue)",
+      "rules": [
+        "CFG-004"
+      ],
+      "optional": true
+    }
+  ],
+  "scenario_c": [],
+  "scenario_d": [
+    {
+      "id": "D1",
+      "desc": "npm ci in CI without a lockfile",
+      "rules": [
+        "DEP-004"
+      ],
+      "files": [
+        ".github/workflows/ci.yml",
+        "web/package.json"
+      ]
+    },
+    {
+      "id": "D2",
+      "desc": "Unbounded npm dependencies (* / latest)",
+      "rules": [
+        "DEP-002"
+      ],
+      "files": [
+        "web/package.json"
+      ]
+    },
+    {
+      "id": "D3",
+      "desc": "yaml.load on request body",
+      "rules": [
+        "SEC-010"
+      ],
+      "files": [
+        "api/main.py"
+      ],
+      "line": 12
+    },
+    {
+      "id": "D4",
+      "desc": "shell=True command injection",
+      "rules": [
+        "SEC-010"
+      ],
+      "files": [
+        "api/main.py"
+      ],
+      "line": 16
+    },
+    {
+      "id": "D5",
+      "desc": "Tests assert nothing",
+      "rules": [
+        "TST-004"
+      ],
+      "files": [
+        "api/tests/test_main.py"
+      ]
+    },
+    {
+      "id": "D6",
+      "desc": "Tests never executed in CI",
+      "rules": [
+        "TST-002"
+      ],
+      "files": [
+        null,
+        ".github/workflows/ci.yml"
+      ]
+    },
+    {
+      "id": "D7",
+      "desc": "Release workflow in .github/workflow/ (never runs)",
+      "rules": [
+        "CI-002"
+      ],
+      "files": [
+        ".github/workflow/release.yml"
+      ]
+    },
+    {
+      "id": "D8",
+      "desc": "Deprecated actions/upload-artifact@v3",
+      "rules": [
+        "CI-006"
+      ],
+      "files": [
+        ".github/workflows/ci.yml"
+      ]
+    },
+    {
+      "id": "D9",
+      "desc": "Unrestricted auto-merge via pull_request_target",
+      "rules": [
+        "COL-001",
+        "SEC-005",
+        "SEC-004"
+      ],
+      "files": [
+        ".github/workflows/automerge.yml"
+      ]
+    },
+    {
+      "id": "D10",
+      "desc": "Dockerfile python:latest, COPY . without .dockerignore, root",
+      "rules": [
+        "BLD-003"
+      ],
+      "files": [
+        "Dockerfile"
+      ]
+    },
+    {
+      "id": "D11",
+      "desc": "Hardcoded LAN IP API URL",
+      "rules": [
+        "CFG-003",
+        "CFG-001"
+      ],
+      "files": [
+        "web/src/index.js"
+      ]
+    },
+    {
+      "id": "D12",
+      "desc": "No linting configured or run",
+      "rules": [
+        "CQ-001"
+      ]
+    },
+    {
+      "id": "D13",
+      "desc": "PyYAML imported but not declared (optional)",
+      "rules": [
+        "DEP-003",
+        "DEP-001"
+      ],
+      "files": [
+        null,
+        "api/requirements.txt",
+        "api/main.py"
+      ],
+      "optional": true
+    },
+    {
+      "id": "D14",
+      "desc": "DATABASE_URL undocumented (optional)",
+      "rules": [
+        "CFG-004"
+      ],
+      "optional": true
+    },
+    {
+      "id": "D15",
+      "desc": ".gitignore lacks node_modules/dist (optional)",
+      "rules": [
+        "HYG-002"
+      ],
+      "optional": true
+    },
+    {
+      "id": "D16",
+      "desc": "Docker image never built/validated in CI (optional)",
+      "rules": [
+        "BLD-001",
+        "BLD-002"
+      ],
+      "optional": true
+    }
+  ],
+  "scenario_e": [
+    {
+      "id": "E1",
+      "desc": "Dockerfile CMD python -m ledger but no __main__.py (optional, accidental genuine defect)",
+      "rules": [
+        "BLD-900",
+        "BLD-001",
+        "BLD-003",
+        "CQ-002",
+        "CQ-900"
+      ],
+      "files": [
+        "Dockerfile"
+      ],
+      "optional": true
+    }
+  ]
+}

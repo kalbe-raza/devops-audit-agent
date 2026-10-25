@@ -1,0 +1,175 @@
+{
+  "repository": "https://github.com/example/scenario-a",
+  "violations": [
+    {
+      "rule_id": "SEC-001",
+      "category": "security",
+      "severity": "critical",
+      "file": "config.py",
+      "line": 2,
+      "description": "A hardcoded Stripe API key sits in tracked source.",
+      "evidence": "config.py:2 STRIPE_KEY is set to a non-placeholder Stripe key (len 32, entropy 4.7) and imported by app.py:3.",
+      "recommendation": "Rotate the key now, load it from an environment variable or a secret manager, and purge it from git history."
+    },
+    {
+      "rule_id": "SEC-003",
+      "category": "security",
+      "severity": "critical",
+      "file": ".env",
+      "line": 1,
+      "description": "A .env file holding an AWS access key ID and a DB password is committed.",
+      "evidence": ".env:1 AWS_ACCESS_KEY_ID (real-looking, not a placeholder) and .env:2 DB_PASSWORD were added in commit 43cf215.",
+      "recommendation": "Rotate the AWS credentials and DB password, git rm --cached .env, add .env to .gitignore, provide a .env.example, and purge it from history."
+    },
+    {
+      "rule_id": "TST-001",
+      "category": "testing",
+      "severity": "high",
+      "file": null,
+      "line": null,
+      "description": "The repository has no automated tests.",
+      "evidence": "The tracked files contain no tests/ directory and no test_*.py files. Only app.py, config.py and utils.py hold code.",
+      "recommendation": "Add pytest tests for the Flask route (using the test client with a mocked requests call) and for utils.load."
+    },
+    {
+      "rule_id": "CI-001",
+      "category": "ci_cd",
+      "severity": "medium",
+      "file": null,
+      "line": null,
+      "description": "There is no continuous integration configuration.",
+      "evidence": "inspect_ci found 0 workflow files and no other CI config.",
+      "recommendation": "Add a GitHub Actions workflow that runs on push and pull_request to main, installs dependencies, lints and runs tests."
+    },
+    {
+      "rule_id": "CQ-003",
+      "category": "code_quality",
+      "severity": "medium",
+      "file": "app.py",
+      "line": 13,
+      "description": "A bare except silently swallows every error in the request handler.",
+      "evidence": "app.py:13-14 'except: pass', so the view returns None (an HTTP 500) with no logging.",
+      "recommendation": "Catch requests.RequestException specifically, log it, and return a proper error response."
+    },
+    {
+      "rule_id": "CFG-001",
+      "category": "configuration",
+      "severity": "medium",
+      "file": "app.py",
+      "line": 6,
+      "description": "The app hardcodes a data file path under a developer's home directory.",
+      "evidence": "app.py:6 DATA_FILE = '/home/john/projects/shop/data/input.csv'.",
+      "recommendation": "Read DATA_FILE from an environment variable, or use a path relative to the project."
+    },
+    {
+      "rule_id": "CFG-001",
+      "category": "configuration",
+      "severity": "medium",
+      "file": "utils.py",
+      "line": 4,
+      "description": "utils.load reads from a hardcoded Windows user Desktop path.",
+      "evidence": "utils.py:4 open('C:\\\\Users\\\\john\\\\Desktop\\\\data.csv').",
+      "recommendation": "Take the path as a parameter or read it from an environment variable or config."
+    },
+    {
+      "rule_id": "CFG-003",
+      "category": "configuration",
+      "severity": "medium",
+      "file": "config.py",
+      "line": 3,
+      "description": "The production database host is hardcoded in the single config module.",
+      "evidence": "config.py:3 DB_HOST = 'prod-db.internal.example.com'. No environment-based override exists.",
+      "recommendation": "Read DB_HOST from an environment variable so each environment can set its own value."
+    },
+    {
+      "rule_id": "DEP-002",
+      "category": "dependency_management",
+      "severity": "medium",
+      "file": "requirements.txt",
+      "line": 1,
+      "description": "The application's runtime dependencies have no version constraints.",
+      "evidence": "requirements.txt lists flask (L1) and requests (L2) with no version specifiers, and there is no lockfile.",
+      "recommendation": "Pin exact versions (e.g. flask==3.x.y), or use pip-tools to generate a pinned lock."
+    },
+    {
+      "rule_id": "HYG-001",
+      "category": "repository_hygiene",
+      "severity": "medium",
+      "file": null,
+      "line": null,
+      "description": "There is no README at the repository root.",
+      "evidence": "None of the 8 tracked files is a README.",
+      "recommendation": "Add a README.md covering purpose, setup, required environment variables and how to run the app."
+    },
+    {
+      "rule_id": "HYG-002",
+      "category": "repository_hygiene",
+      "severity": "medium",
+      "file": null,
+      "line": null,
+      "description": "The repository has no .gitignore.",
+      "evidence": "list_files shows no .gitignore. As a result, .env, __pycache__/, server.log and .DS_Store are all tracked.",
+      "recommendation": "Add a Python .gitignore that covers __pycache__/, *.pyc, .env, *.log, .DS_Store and .venv/."
+    },
+    {
+      "rule_id": "HYG-003",
+      "category": "repository_hygiene",
+      "severity": "medium",
+      "file": "__pycache__/config.cpython-311.pyc",
+      "line": null,
+      "description": "Python bytecode cache is committed.",
+      "evidence": "__pycache__/config.cpython-311.pyc was added in commit 43cf215.",
+      "recommendation": "git rm -r --cached __pycache__ and ignore it."
+    },
+    {
+      "rule_id": "SEC-008",
+      "category": "security",
+      "severity": "medium",
+      "file": "app.py",
+      "line": 17,
+      "description": "The main entrypoint runs Flask in debug mode bound to all interfaces.",
+      "evidence": "app.py:17 app.run(host='0.0.0.0', debug=True). Debug mode exposes the Werkzeug interactive debugger on the network.",
+      "recommendation": "Control debug through an environment variable that defaults to False, and serve production traffic with a WSGI server such as gunicorn."
+    },
+    {
+      "rule_id": "SEC-009",
+      "category": "security",
+      "severity": "medium",
+      "file": "app.py",
+      "line": 11,
+      "description": "TLS certificate verification is turned off for an outbound HTTPS request.",
+      "evidence": "app.py:11 requests.get('https://api.example.com', verify=False) in the request handler.",
+      "recommendation": "Remove verify=False. If a custom CA is needed, pass verify=<ca_bundle_path>."
+    },
+    {
+      "rule_id": "CQ-001",
+      "category": "code_quality",
+      "severity": "low",
+      "file": null,
+      "line": null,
+      "description": "No linter or formatter is configured or enforced.",
+      "evidence": "The repo has no pyproject.toml, setup.cfg, pre-commit config or CI lint step.",
+      "recommendation": "Configure ruff (in pyproject.toml or pre-commit) and run it in CI."
+    },
+    {
+      "rule_id": "HYG-003",
+      "category": "repository_hygiene",
+      "severity": "low",
+      "file": ".DS_Store",
+      "line": null,
+      "description": "A macOS metadata file is committed.",
+      "evidence": ".DS_Store is tracked at the repo root.",
+      "recommendation": "Remove it and add .DS_Store to .gitignore."
+    },
+    {
+      "rule_id": "HYG-003",
+      "category": "repository_hygiene",
+      "severity": "low",
+      "file": "server.log",
+      "line": null,
+      "description": "A runtime log file is committed.",
+      "evidence": "server.log is tracked (added in 43cf215).",
+      "recommendation": "Remove it from tracking and add *.log to .gitignore."
+    }
+  ]
+}

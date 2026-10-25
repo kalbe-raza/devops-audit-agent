@@ -1,0 +1,25 @@
+{
+  "repository": "https://github.com/example/scenario-e",
+  "violations": [
+    {
+      "rule_id": "BLD-001",
+      "category": "build_release",
+      "severity": "medium",
+      "file": ".gitlab-ci.yml",
+      "line": 8,
+      "description": "The Docker image defined in the Dockerfile is never built or validated in CI.",
+      "evidence": ".gitlab-ci.yml has a single `test` stage that runs `pip install tox` and `tox` (lines 7-8). No job runs `docker build`, and the GitHub workflow only does labelling.",
+      "recommendation": "Add a GitLab CI job (e.g. a build stage using docker:dind or kaniko) that builds the image and runs a short smoke test of the container on every pipeline."
+    },
+    {
+      "rule_id": "BLD-900",
+      "category": "build_release",
+      "severity": "medium",
+      "file": "Dockerfile",
+      "line": 8,
+      "description": "The container CMD runs `python -m ledger`, but the package has no __main__ module, so the image cannot start.",
+      "evidence": "Dockerfile line 8 is `CMD [\"python\", \"-m\", \"ledger\"]`. The only files in the ledger package are ledger/__init__.py (empty, 0B) and ledger/db.py; there is no ledger/__main__.py.",
+      "recommendation": "Add ledger/__main__.py with the real service entrypoint, or change CMD to point at an existing executable module or script."
+    }
+  ]
+}

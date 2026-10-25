@@ -1,0 +1,17 @@
+
+scenario_a: reported=17 correct=14 required_found=14/14 precision=0.82 recall=1.00
+  UNMATCHED CFG-001 utils.py:4 - utils.load reads from a hardcoded Windows user Desktop path.
+  UNMATCHED HYG-003 .DS_Store:None - A macOS metadata file is committed.
+  UNMATCHED HYG-003 server.log:None - A runtime log file is committed.
+
+scenario_b: reported=12 correct=12 required_found=12/12 precision=1.00 recall=1.00
+
+scenario_c: reported=0 correct=0 required_found=0/0 precision=1.00 recall=1.00
+
+scenario_d: reported=17 correct=16 required_found=12/12 precision=0.94 recall=1.00
+  UNMATCHED BLD-002 .github/workflow/release.yml:10 - The publish job builds and pushes the Docker image without running any tests first or depending on them.
+
+scenario_e: reported=2 correct=1 required_found=0/0 precision=0.50 recall=1.00
+  UNMATCHED BLD-001 .gitlab-ci.yml:8 - The Docker image defined in the Dockerfile is never built or validated in CI.
+
+OVERALL precision=0.90 (43/48) recall=1.00 (38/38)

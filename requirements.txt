@@ -1,0 +1,7 @@
+# Runtime dependencies (pinned for reproducible evaluation)
+anthropic==2.3.0
+python-dotenv==1.2.4
+PyYAML==6.0.3
+ruff==0.17.2
+# Test dependencies
+pytest==9.1.1

@@ -1,0 +1,125 @@
+{
+  "repository": "https://github.com/example/scenario-b",
+  "violations": [
+    {
+      "rule_id": "SEC-005",
+      "category": "security",
+      "severity": "critical",
+      "file": ".github/workflows/pr-check.yml",
+      "line": 11,
+      "description": "pull_request_target workflow checks out the untrusted PR head and runs pip install/pytest with DEPLOY_TOKEN in its environment.",
+      "evidence": "L3 pull_request_target; L11 ref: github.event.pull_request.head.sha; L12 `pip install . && pytest`; L14 DEPLOY_TOKEN: secrets.DEPLOY_TOKEN; no permissions block.",
+      "recommendation": "Switch to the pull_request trigger for running PR code (no secrets), remove DEPLOY_TOKEN from this job, and set permissions: contents: read."
+    },
+    {
+      "rule_id": "BLD-002",
+      "category": "build_release",
+      "severity": "high",
+      "file": ".github/workflows/deploy.yml",
+      "line": 4,
+      "description": "Production deploy runs on push to any branch with no dependency on tests and no environment gate.",
+      "evidence": "L4 branches: ['**']; job 'deploy' has no needs:, no if:, no environment:; L14 restarts the service on the server via SSH.",
+      "recommendation": "Restrict to main (or tags), require a passing test job via needs:, and use a protected GitHub environment."
+    },
+    {
+      "rule_id": "CI-002",
+      "category": "ci_cd",
+      "severity": "high",
+      "file": ".github/workflows/ci.yml",
+      "line": 4,
+      "description": "CI triggers filter on branch 'master' but the default branch is 'main', so CI never runs.",
+      "evidence": "L4 push branches: [master]; L6 pull_request branches: [master]; default branch is main.",
+      "recommendation": "Change branch filters to [main]."
+    },
+    {
+      "rule_id": "CI-003",
+      "category": "ci_cd",
+      "severity": "high",
+      "file": ".github/workflows/ci.yml",
+      "line": 19,
+      "description": "Lint step has continue-on-error: true, so ruff failures never block CI.",
+      "evidence": "L18 `ruff check .`; L19 continue-on-error: true.",
+      "recommendation": "Remove continue-on-error from the Lint step."
+    },
+    {
+      "rule_id": "CI-003",
+      "category": "ci_cd",
+      "severity": "high",
+      "file": ".github/workflows/ci.yml",
+      "line": 21,
+      "description": "Test step failures are masked with '|| true', so failing tests never fail CI.",
+      "evidence": "L21 `run: pytest -q || true`.",
+      "recommendation": "Remove '|| true' so pytest's exit code fails the job."
+    },
+    {
+      "rule_id": "SEC-002",
+      "category": "security",
+      "severity": "high",
+      "file": null,
+      "line": null,
+      "description": "A GitHub token committed in deploy_settings.py remains in git history after the file was deleted.",
+      "evidence": "scan_secrets history: commit b634a6a 'add deploy helper settings' file=deploy_settings.py kind=github_token len=40 entropy=4.8; file deleted in 928cc7d 'remove token file'.",
+      "recommendation": "Revoke/rotate the token immediately, purge history (git filter-repo) if needed, and keep tokens in GitHub secrets."
+    },
+    {
+      "rule_id": "SEC-004",
+      "category": "security",
+      "severity": "high",
+      "file": ".github/workflows/ci.yml",
+      "line": 7,
+      "description": "CI workflow that only lints and tests grants write-all token permissions, including on pull_request.",
+      "evidence": "L7 `permissions: write-all`; jobs only run ruff and pytest.",
+      "recommendation": "Set `permissions: contents: read`."
+    },
+    {
+      "rule_id": "SEC-006",
+      "category": "security",
+      "severity": "high",
+      "file": ".github/workflows/triage.yml",
+      "line": 10,
+      "description": "Issue title is interpolated directly into a run: shell script, allowing script injection by any issue author.",
+      "evidence": "L10 echo \"New issue: ${{ github.event.issue.title }}\"; L11 ./scripts/label.sh \"${{ github.event.issue.title }}\".",
+      "recommendation": "Pass the title via env: (e.g. TITLE: ${{ github.event.issue.title }}) and reference \"$TITLE\" in the script; add minimal permissions."
+    },
+    {
+      "rule_id": "CI-005",
+      "category": "ci_cd",
+      "severity": "medium",
+      "file": ".github/workflows/deploy.yml",
+      "line": 10,
+      "description": "Third-party deploy action pinned to the mutable 'master' branch while receiving the SSH key secret.",
+      "evidence": "L10 uses: appleboy/ssh-action@master; L13 key: secrets.SSH_KEY.",
+      "recommendation": "Pin to a release tag or full commit SHA."
+    },
+    {
+      "rule_id": "DEP-003",
+      "category": "dependency_management",
+      "severity": "medium",
+      "file": "requirements.txt",
+      "line": 1,
+      "description": "requirements.txt pins requests==2.31.0 which conflicts with pyproject's requests>=2.32,<3; CI installs from requirements.txt.",
+      "evidence": "requirements.txt L1 requests==2.31.0; pyproject.toml L5 requests>=2.32,<3 (pydantic ==2.6.1 vs >=2.5,<3 is compatible). ci.yml L16 installs requirements.txt.",
+      "recommendation": "Use a single source of truth (e.g. generate pinned requirements from pyproject with pip-compile) and align versions."
+    },
+    {
+      "rule_id": "BLD-004",
+      "category": "build_release",
+      "severity": "low",
+      "file": "inventory/__init__.py",
+      "line": 1,
+      "description": "Package version disagrees between __init__.py (0.2.0) and pyproject.toml (0.3.0).",
+      "evidence": "inventory/__init__.py L1 __version__ = '0.2.0'; pyproject.toml L3 version = \"0.3.0\".",
+      "recommendation": "Single-source the version (importlib.metadata.version or dynamic version)."
+    },
+    {
+      "rule_id": "CFG-002",
+      "category": "configuration",
+      "severity": "low",
+      "file": ".vscode/settings.json",
+      "line": 2,
+      "description": "Personal IDE settings with a user-specific interpreter path are committed.",
+      "evidence": "L2 python.defaultInterpreterPath points to /Users/alice/.venvs/inventory/bin/python.",
+      "recommendation": "Remove .vscode/settings.json from git and add it to .gitignore."
+    }
+  ]
+}

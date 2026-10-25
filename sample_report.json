@@ -1,0 +1,155 @@
+{
+  "repository": "https://github.com/we45/Vulnerable-Flask-App",
+  "violations": [
+    {
+      "rule_id": "SEC-001",
+      "category": "security",
+      "severity": "high",
+      "file": "app/app.py",
+      "line": 28,
+      "description": "The Flask secret key, the JWT HMAC signing keys and the seeded admin password are hardcoded in the application source.",
+      "evidence": "app/app.py:26-27 hardcode SECRET_KEY_HMAC and SECRET_KEY_HMAC_2. Line 28 assigns app.secret_key a high-entropy literal (redacted by the tool). Line 63 seeds the admin user with a hardcoded password, and tests/e2e_zap.py:15 repeats it. The repo is a deliberately vulnerable training app, so I lowered this from critical to high.",
+      "recommendation": "Load the secret key and JWT keys from environment variables or a secret store, e.g. os.environ['FLASK_SECRET_KEY']. Generate the initial admin credential when the app is deployed. If the vulnerability is intentional, document it clearly in the README."
+    },
+    {
+      "rule_id": "SEC-010",
+      "category": "security",
+      "severity": "high",
+      "file": "app/app.py",
+      "line": 114,
+      "description": "Server-side template injection: the request URL and exception text are interpolated into a template that is rendered with render_template_string.",
+      "evidence": "Line 112 inserts request.url into the template string with %, and line 114 renders it with render_template_string(template, dir=dir, help=help, locals=locals). Lines 280-281 use the same pattern with str(e).",
+      "recommendation": "Use a static template file and pass user data only as context variables, e.g. render_template('404.html', url=request.url). Do not expose dir/help/locals to templates."
+    },
+    {
+      "rule_id": "SEC-010",
+      "category": "security",
+      "severity": "high",
+      "file": "app/app.py",
+      "line": 261,
+      "description": "The /search endpoint builds a SQL query by string-formatting user input (SQL injection).",
+      "evidence": "Line 261 builds the query with \"... WHERE username = '%s';\" % search_term, where search_term comes from request.json. Line 265 runs it with db.engine.execute(str_query).",
+      "recommendation": "Use parameterised queries, e.g. text('... WHERE username = :u') with params, or the ORM call Customer.query.filter_by(username=...)."
+    },
+    {
+      "rule_id": "SEC-010",
+      "category": "security",
+      "severity": "high",
+      "file": "app/app.py",
+      "line": 329,
+      "description": "Uploaded YAML files are parsed with yaml.load without SafeLoader (unsafe deserialisation).",
+      "evidence": "yaml_hammer() saves the uploaded file (lines 318-324) and then calls ydata = yaml.load(y) at line 329. PyYAML==3.12 is pinned in app/requirements.txt, and that version builds arbitrary Python objects by default.",
+      "recommendation": "Use yaml.safe_load() and upgrade PyYAML."
+    },
+    {
+      "rule_id": "SEC-900",
+      "category": "security",
+      "severity": "high",
+      "file": "app/app.py",
+      "line": 97,
+      "description": "The /get/<cust_id> endpoint authenticates with insecure_verify(), which decodes the JWT without checking its signature and always returns True.",
+      "evidence": "Line 97: decoded = jwt.decode(token, verify = False), followed by an unconditional return True. get_customer() at line 227 relies on this check.",
+      "recommendation": "Use verify_jwt() with signature verification and a fixed list of algorithms for every protected endpoint."
+    },
+    {
+      "rule_id": "TST-001",
+      "category": "testing",
+      "severity": "high",
+      "file": "tests/e2e_zap.py",
+      "line": 21,
+      "description": "There are no automated functional tests: the only file under tests/ is a ZAP scan driver with no assertions.",
+      "evidence": "tests/e2e_zap.py runs requests through the ZAP proxy and prints the responses. On a non-200 status it just skips that step (e.g. `if login.status_code == 200:` at line 21). The file contains no assert statements and no pytest/unittest usage. No other test files exist for the 339-line app/app.py, so regressions such as reg_customer calling User(username, hash_pass) positionally would go unnoticed.",
+      "recommendation": "Add pytest tests that use Flask's test_client to cover the endpoints with real assertions, and run them in CI before the ZAP scan."
+    },
+    {
+      "rule_id": "BLD-003",
+      "category": "build_release",
+      "severity": "medium",
+      "file": "Dockerfile",
+      "line": 1,
+      "description": "The container is built on an end-of-life Python 2.7 / Debian jessie base image and runs as root.",
+      "evidence": "Line 1: FROM python:2.7.14-jessie. Both Python 2.7 and Debian jessie are end-of-life, so the image receives no security updates. The Dockerfile has no USER instruction, so the app runs as root. Line 5 runs COPY app/ /apps/, which copies the tracked app/test.db into the image.",
+      "recommendation": "Port the app to Python 3 and use a maintained slim base (e.g. python:3.12-slim pinned by digest). Add a non-root USER, and exclude test.db and the Files/ directory with a .dockerignore."
+    },
+    {
+      "rule_id": "CI-005",
+      "category": "ci_cd",
+      "severity": "medium",
+      "file": ".github/workflows/zap_test.yml",
+      "line": 49,
+      "description": "A third-party action is referenced by the mutable @master branch.",
+      "evidence": "Line 49: uses: jakejarvis/wait-action@master",
+      "recommendation": "Pin the action to a release tag or commit SHA, or replace it with a plain `run: sleep 20`."
+    },
+    {
+      "rule_id": "HYG-003",
+      "category": "repository_hygiene",
+      "severity": "medium",
+      "file": "app/test.db",
+      "line": null,
+      "description": "A runtime SQLite database file is committed to the repository.",
+      "evidence": "app/test.db (20.0KB) is tracked. The app uses it as SQLALCHEMY_DATABASE_URI 'sqlite:///test.db' (app/app.py:25), and setup_users() creates and seeds it at runtime with an admin user and fake customer records.",
+      "recommendation": "Remove app/test.db from git with `git rm --cached` and add *.db to .gitignore. The database is already created at startup by db.create_all()."
+    },
+    {
+      "rule_id": "CI-006",
+      "category": "ci_cd",
+      "severity": "low",
+      "file": ".github/workflows/zap_test.yml",
+      "line": 9,
+      "description": "The workflow uses a retired runner and deprecated action versions, so it can no longer run.",
+      "evidence": "Line 9: runs-on: ubuntu-18.04 (retired runner). Line 13: actions/setup-python@v1. Line 57: actions/upload-artifact@v1 (retired). Line 11: actions/checkout@v2. Line 15 installs Python 3.7.10, which is end-of-life.",
+      "recommendation": "Move to ubuntu-latest (or ubuntu-24.04), actions/checkout@v4, actions/setup-python@v5, actions/upload-artifact@v4 and a supported Python version."
+    },
+    {
+      "rule_id": "CQ-001",
+      "category": "code_quality",
+      "severity": "low",
+      "file": null,
+      "line": null,
+      "description": "No linter or formatter is configured or enforced in CI.",
+      "evidence": "The repo has no ruff, flake8, pylint, black or pre-commit config, and zap_test.yml has no lint step. The only lint-like tool is the semgrep workflow, which sits in old-workflows/ and is therefore disabled. A default ruff run finds unused imports (F401), a redefined `os` import (F811 at app.py:18) and a bare except (E722).",
+      "recommendation": "Add a ruff (or flake8) configuration and run it in CI, optionally through pre-commit."
+    },
+    {
+      "rule_id": "CQ-003",
+      "category": "code_quality",
+      "severity": "low",
+      "file": "app/app.py",
+      "line": 193,
+      "description": "A bare except in /login swallows every error and returns a generic 404.",
+      "evidence": "Line 193 is `except:`, followed by return jsonify({'Error': 'Unable to recognize Input'}),404. Database or other server errors are hidden and reported as bad input.",
+      "recommendation": "Catch specific exceptions (KeyError, TypeError), log unexpected ones, and return the correct status codes."
+    },
+    {
+      "rule_id": "CFG-002",
+      "category": "configuration",
+      "severity": "low",
+      "file": ".vscode/settings.json",
+      "line": 2,
+      "description": "A personal VS Code settings file pointing at a local virtualenv interpreter is committed.",
+      "evidence": ".vscode/settings.json line 2: \"python.pythonPath\": \"venv/bin/python2.7\"",
+      "recommendation": "Remove .vscode/settings.json from git and add it to .gitignore. Share only intentional configuration, such as .vscode/extensions.json."
+    },
+    {
+      "rule_id": "DEP-006",
+      "category": "dependency_management",
+      "severity": "low",
+      "file": ".python-version",
+      "line": 1,
+      "description": "The repo declares three different Python versions.",
+      "evidence": ".python-version says 2.7.15, the Dockerfile:1 base image is python:2.7.14, and the CI workflow (zap_test.yml:15) sets up Python 3.7.10. The app code is Python 2-only (e.message at app.py:148, hashlib.md5 called on a str), and the setup-python step installs only the e2e script's dependencies (requests, python-owasp-zap-v2.4), not the app's.",
+      "recommendation": "Pick one supported Python 3 version and use it in .python-version, the Dockerfile and CI."
+    },
+    {
+      "rule_id": "HYG-002",
+      "category": "repository_hygiene",
+      "severity": "low",
+      "file": ".gitignore",
+      "line": 1,
+      "description": "The .gitignore only ignores venv/* and is missing standard Python and runtime artifacts.",
+      "evidence": "The whole .gitignore is one line, `venv/*`. It has no rules for __pycache__/, *.pyc, *.db, .env, the uploaded files saved to app/Files/, the ZAP report tests/zap-report.json, or .vscode/. As a result, app/test.db and .vscode/settings.json are tracked.",
+      "recommendation": "Extend .gitignore with the standard Python template plus *.db, app/Files/*, zap/ and tests/zap-report.json."
+    }
+  ]
+}

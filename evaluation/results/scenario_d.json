@@ -1,0 +1,175 @@
+{
+  "repository": "https://github.com/example/scenario-d",
+  "violations": [
+    {
+      "rule_id": "CI-002",
+      "category": "ci_cd",
+      "severity": "high",
+      "file": ".github/workflow/release.yml",
+      "line": null,
+      "description": "The release workflow is in .github/workflow/ (singular), so GitHub Actions never runs it.",
+      "evidence": "File path .github/workflow/release.yml; inspect_ci found only 2 workflow files in .github/workflows/.",
+      "recommendation": "Move it to .github/workflows/release.yml, and make the publish job depend on test/build jobs."
+    },
+    {
+      "rule_id": "COL-001",
+      "category": "collaboration",
+      "severity": "high",
+      "file": ".github/workflows/automerge.yml",
+      "line": 10,
+      "description": "Every pull request (including from forks/any author) is auto-merged via pull_request_target with a write token, with no actor or condition restriction.",
+      "evidence": "on: pull_request_target (L2); permissions contents: write, pull-requests: write (L3-5); job 'merge' has no if: condition; step runs `gh pr merge --auto --squash \"$PR_URL\"` with GH_TOKEN.",
+      "recommendation": "Restrict to trusted actors (e.g. if: github.actor == 'dependabot[bot]' plus update-type checks via dependabot/fetch-metadata), rely on required status checks/reviews, or remove the workflow."
+    },
+    {
+      "rule_id": "SEC-010",
+      "category": "security",
+      "severity": "high",
+      "file": "api/main.py",
+      "line": 12,
+      "description": "Unsafe deserialisation: request body is parsed with yaml.load without SafeLoader.",
+      "evidence": "L10-12: POST /import returns `yaml.load(body)` on the user-supplied body.",
+      "recommendation": "Use yaml.safe_load(body) and validate the result with a pydantic model."
+    },
+    {
+      "rule_id": "SEC-010",
+      "category": "security",
+      "severity": "high",
+      "file": "api/main.py",
+      "line": 16,
+      "description": "Shell command injection: user-supplied `host` query parameter is interpolated into a shell=True subprocess call.",
+      "evidence": "L15-16: `def ping(host: str): return subprocess.check_output(f'ping -c 1 {host}', shell=True)` on a public GET endpoint.",
+      "recommendation": "Validate host (ipaddress/hostname regex) and call subprocess with an argument list without shell, e.g. ['ping','-c','1',host]."
+    },
+    {
+      "rule_id": "TST-002",
+      "category": "testing",
+      "severity": "high",
+      "file": ".github/workflows/ci.yml",
+      "line": 20,
+      "description": "CI never runs the existing tests (pytest for api, vitest for web); it only imports the module and builds.",
+      "evidence": "api job L20 `python -c \"import api.main\"` instead of pytest though api/tests/test_main.py exists; web job L11 runs `npm run build` but not the defined `test` script (vitest run).",
+      "recommendation": "Add `pip install pytest && pytest api/tests` and `npm test` steps to the respective jobs."
+    },
+    {
+      "rule_id": "BLD-001",
+      "category": "build_release",
+      "severity": "medium",
+      "file": ".github/workflows/ci.yml",
+      "line": null,
+      "description": "The Docker image defined by the Dockerfile is never built/validated in CI.",
+      "evidence": "ci.yml jobs 'web' and 'api' contain no docker build step; the only docker build is in the non-running .github/workflow/release.yml.",
+      "recommendation": "Add a `docker build .` job (e.g. docker/build-push-action with push: false) to ci.yml for PRs."
+    },
+    {
+      "rule_id": "BLD-002",
+      "category": "build_release",
+      "severity": "medium",
+      "file": ".github/workflow/release.yml",
+      "line": 10,
+      "description": "The publish job builds and pushes the Docker image without running any tests first or depending on them.",
+      "evidence": "Single job 'publish' with checkout then `docker build -t org/dash . && docker push org/dash`; no needs:, no test step, image pushed only as an untagged (latest) reference.",
+      "recommendation": "Add a test job and `needs: test`, tag the image with the git tag version, and log in to the registry using secrets."
+    },
+    {
+      "rule_id": "BLD-003",
+      "category": "build_release",
+      "severity": "medium",
+      "file": "Dockerfile",
+      "line": 1,
+      "description": "Container build is unreproducible and unsafe: mutable python:latest base, COPY . . without .dockerignore, and runs as root.",
+      "evidence": "L1 `FROM python:latest`; L3 `COPY . .`; no .dockerignore tracked; no USER instruction.",
+      "recommendation": "Pin a specific base (e.g. python:3.12-slim or digest), add a .dockerignore (.git, .env, web/node_modules), copy only api/, and add a non-root USER."
+    },
+    {
+      "rule_id": "CFG-003",
+      "category": "configuration",
+      "severity": "medium",
+      "file": "web/src/index.js",
+      "line": 2,
+      "description": "API base URL is hardcoded to a private LAN IP over plain HTTP instead of environment config.",
+      "evidence": "L2: axios.create({ baseURL: 'http://192.168.1.23:8000' }).",
+      "recommendation": "Read the base URL from build-time env (e.g. import.meta.env.VITE_API_URL) with per-environment .env files."
+    },
+    {
+      "rule_id": "DEP-002",
+      "category": "dependency_management",
+      "severity": "medium",
+      "file": "web/package.json",
+      "line": 5,
+      "description": "Web app runtime dependencies are completely unconstrained with no lockfile.",
+      "evidence": "L5: \"react\": \"*\", \"axios\": \"latest\"; no lockfile present.",
+      "recommendation": "Use caret ranges for specific major versions (e.g. react ^18.2.0, axios ^1.6.0) and commit a lockfile."
+    },
+    {
+      "rule_id": "DEP-003",
+      "category": "dependency_management",
+      "severity": "medium",
+      "file": "api/requirements.txt",
+      "line": null,
+      "description": "Runtime import `yaml` (PyYAML) is not declared in api/requirements.txt.",
+      "evidence": "api/main.py L4 `import yaml`; requirements.txt lists only fastapi, uvicorn, sqlalchemy (sqlalchemy unused in code).",
+      "recommendation": "Add a pinned PyYAML entry (e.g. PyYAML==6.0.1) and drop unused sqlalchemy if not needed."
+    },
+    {
+      "rule_id": "DEP-004",
+      "category": "dependency_management",
+      "severity": "medium",
+      "file": ".github/workflows/ci.yml",
+      "line": 11,
+      "description": "CI runs `npm ci` but no package-lock.json is committed, so the web job fails.",
+      "evidence": "ci.yml L11 `cd web && npm ci && npm run build`; dependency_overview: web/package.json lockfile=ABSENT; no lockfile tracked.",
+      "recommendation": "Generate and commit web/package-lock.json."
+    },
+    {
+      "rule_id": "TST-004",
+      "category": "testing",
+      "severity": "medium",
+      "file": "api/tests/test_main.py",
+      "line": 4,
+      "description": "The API tests assert nothing meaningful.",
+      "evidence": "test_app_exists contains only `assert True` (L4); test_ping body is `pass` (L7).",
+      "recommendation": "Write real tests using fastapi.testclient.TestClient asserting responses of /ping and /import (including malicious input)."
+    },
+    {
+      "rule_id": "CI-006",
+      "category": "ci_cd",
+      "severity": "low",
+      "file": ".github/workflows/ci.yml",
+      "line": 21,
+      "description": "Uses the retired actions/upload-artifact@v3, which no longer runs on GitHub.com.",
+      "evidence": "L21 `uses: actions/upload-artifact@v3`.",
+      "recommendation": "Upgrade to actions/upload-artifact@v4."
+    },
+    {
+      "rule_id": "CQ-001",
+      "category": "code_quality",
+      "severity": "low",
+      "file": null,
+      "line": null,
+      "description": "No linter/formatter configured or run in CI for either Python or JS code.",
+      "evidence": "No ruff/flake8/eslint/pre-commit config among the 11 tracked files; inspect_ci: lint command found=False.",
+      "recommendation": "Add ruff (pyproject/ruff.toml) and eslint configs and run them in ci.yml."
+    },
+    {
+      "rule_id": "CFG-004",
+      "category": "configuration",
+      "severity": "low",
+      "file": "api/main.py",
+      "line": 8,
+      "description": "Required DATABASE_URL environment variable is not documented anywhere.",
+      "evidence": "L8 `os.environ['DATABASE_URL']` (KeyError at import if unset); README only says \"Node frontend + Python API.\"; no .env.example.",
+      "recommendation": "Add a .env.example and README section documenting DATABASE_URL and other settings."
+    },
+    {
+      "rule_id": "HYG-002",
+      "category": "repository_hygiene",
+      "severity": "low",
+      "file": ".gitignore",
+      "line": null,
+      "description": ".gitignore lacks rules for the Node half of the stack and common Python artifacts.",
+      "evidence": ".gitignore contains only `__pycache__/` and `.env`; no node_modules/, dist/, .venv/, *.pyc although web/ uses npm and vite build.",
+      "recommendation": "Add node_modules/, dist/, .venv/, *.pyc, coverage output."
+    }
+  ]
+}

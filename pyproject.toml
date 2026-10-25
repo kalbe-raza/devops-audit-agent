@@ -1,0 +1,27 @@
+[project]
+name = "devops-audit-agent"
+version = "1.0.0"
+description = "LLM-driven agent that audits GitHub repositories for DevOps best-practice violations"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "anthropic>=2.3,<3",
+    "python-dotenv>=1.0,<2",
+    "PyYAML>=6.0,<7",
+    "ruff>=0.17,<0.18",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8,<10"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+extend-exclude = [".venv"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
